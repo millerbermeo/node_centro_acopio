@@ -1,4 +1,4 @@
-import { createPool } from "mysql";
+import { createPool } from "mysql2/promise";
 import dotenv from "dotenv"
 
 dotenv.config({path: '/.src/env/.env'})
