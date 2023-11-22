@@ -1,10 +1,10 @@
-const express = require('express');
-const bodyParser = require('body-parser');
+import express from 'express';
+import body_parse from "body-parser"
 
 const servidor = express();
 
-servidor.use(bodyParser.json());
-servidor.use(bodyParser.urlencoded({ extended: true }));
+servidor.use(body_parse.json());
+// servidor.use(body_parse.urlencoded({ extended: true }));
 
 servidor.get('/', (req, res) => {
     res.send('¡Hola, mundo!');
