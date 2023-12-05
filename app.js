@@ -2,6 +2,7 @@ import express from 'express';
 import body_parse from "body-parser"
 import {pool} from "./src/database/conexion.js"
 import residuo from "./src/routers/residuo.router.js"
+import validator from './src/routers/validator.router.js';
 
 const servidor = express();
 
@@ -23,6 +24,7 @@ servidor.get('/', (req, res) => {
 
 
 servidor.use('/residuo', residuo)
+servidor.use('/usuario',validator);
 
 servidor.listen(3000, () => {
   console.log('El servidor se está ejecutando en el puerto 3000');
