@@ -4,6 +4,9 @@ import { validarToken } from "../controllers/validator.controller.js";
 
 const router = Router();
 
+// router.use(validarToken);
+
+
 router.get('/listar',validarToken,residuoListar);
 router.get('/movimientos',validarToken,residuoListarMovimientos);
 router.get('/listar/:id',validarToken,residuoListarId);

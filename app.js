@@ -3,11 +3,14 @@ import body_parse from "body-parser"
 import {pool} from "./src/database/conexion.js"
 import residuo from "./src/routers/residuo.router.js"
 import validator from './src/routers/validator.router.js';
+import cors from 'cors';
+
 
 const servidor = express();
 
+servidor.use(cors());
 servidor.use(body_parse.json());
-// servidor.use(body_parse.urlencoded({ extended: true }));
+servidor.use(body_parse.urlencoded({ extended: true }));
 
 (async () => {
   try {
