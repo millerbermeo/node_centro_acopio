@@ -92,3 +92,21 @@ export const residuoRegistrarSalida = async (req, res) => {
       res.status(500).json({ success: false, message: "Error interno del servidor." });
     }
   };
+
+
+export const residuoListarMovimientos = async (req, res) => {
+    try {
+
+        let query = 'SELECT m.id_movimiento, m.tipo_movimiento, m.cantidad, m.fecha, r.nombre_residuo, u.nombre FROM movimientos m JOIN residuos r ON m.fk_residuo = r.id_residuo JOIN usuarios u ON m.fk_usuario = u.id_usuario'
+        const [result] = await pool.query(query);
+
+        if (result.length > 0) {
+            return res.status(200).json(result);
+        } else {
+            return res.status(404).json({ 'message': 'No se encontraron moviminentos' });
+        }
+
+    } catch (e) {
+        return res.status(500).json({ 'message': 'Error: ' + e });
+    }
+}

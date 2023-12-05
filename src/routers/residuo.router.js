@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { residuoRegistrar, residuoListar, residuoListarId, residuoActualizar, residuoRegistrarSalida } from "../controllers/residuo.controller.js";
+import { residuoRegistrar, residuoListar, residuoListarId, residuoActualizar, residuoRegistrarSalida, residuoListarMovimientos } from "../controllers/residuo.controller.js";
 
 const router = Router();
 
 router.get('/listar',residuoListar);
+router.get('/movimientos',residuoListarMovimientos);
 router.get('/listar/:id',residuoListarId);
 router.post('/registrar',residuoRegistrar);
 router.post('/salida',residuoRegistrarSalida);
