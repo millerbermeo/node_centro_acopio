@@ -29,7 +29,6 @@ export const validarToken = async(req, res, next) => {
                 if (error) {
                     return res.status(402).json({"message": "el token invalido"});
                 } else {
-                    // Almacena la información del usuario (incluido el rol) en el objeto `req` para que esté disponible en los controladores
                     req.user = decoded.user;
                     next();
                 }
