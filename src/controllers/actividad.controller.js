@@ -3,41 +3,10 @@ import { pool } from "../database/conexion.js";
 // Función para insertar actividad con usuarios asociados
 export const ActividadRegistrarUsuarios = async (req, res) => {
 
-
-
-
     try {
 
         const { rol } = req.user;
 
-        if (rol === 'administrador') {
-
-            const { nombre_actividad, estado_actividad, lugar_actividad, fecha_actividad, usuarios } = req.body;
-
-            // Iniciar la transacción
-            await pool.query('START TRANSACTION');
-
-            // Insertar la actividad
-            const [actividadResult] = await pool.query(
-                'INSERT INTO actividades (nombre_actividad, estado_actividad, lugar_actividad, fecha_actividad) VALUES (?, ?, ?, ?)',
-                [nombre_actividad, estado_actividad, lugar_actividad, fecha_actividad]
-            );
-
-            const id_actividad = actividadResult.insertId;
-
-            // Insertar usuarios asociados de manera síncrona
-            for (const id_usuario of usuarios) {
-                await pool.query('INSERT INTO usuarios_actividades (fk_usuario, fk_actividad) VALUES (?, ?)', [id_usuario, id_actividad]);
-            }
-
-            // Confirmar la transacción
-            await pool.query('COMMIT');
-
-            res.status(201).json({ success: true, message: 'Actividad con usuarios registrada con éxito.' });
-
-        } else {
-            return res.status(403).json({ 'message': 'Error: usuario no autorizado' });
-        }
     } catch (error) {
         // Revertir la transacción en caso de error
         await pool.query('ROLLBACK');
@@ -52,11 +21,6 @@ export const actividadTerminada = async (req, res) => {
 
     try {
 
-        const { rol } = req.user;
-
-        if (rol === 'administrador') {
-
-
             let id = req.params.id
 
             let sql = `UPDATE actividades SET estado_actividad = 'terminada' WHERE id_actividad = ${id}`
@@ -64,9 +28,6 @@ export const actividadTerminada = async (req, res) => {
             await pool.query(sql)
 
             res.status(200).json({ success: true, message: 'Estado Actualizado.' });
-        } else {
-            return res.status(403).json({ 'message': 'Error: usuario no autorizado' });
-        }
 
     } catch (error) {
         console.error("Error actualizar estado:", error);
