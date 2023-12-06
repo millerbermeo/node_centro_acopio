@@ -8,15 +8,15 @@ export const residuoRegistrar = async (req, res) => {
 
         if (rol === 'administrador') {
 
-        const { nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm, fk_usuario, fk_elemento } = req.body;
+        const { nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm, fk_usuario, fk_elemento, fk_actividad } = req.body;
 
         const sql1 = `INSERT INTO residuos (nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm) VALUES (?, ?, ?, ?, ?)`;
         const [rows1] = await pool.query(sql1, [nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm]);
 
         const id_residuo = rows1.insertId;
 
-        const sql2 = `INSERT INTO movimientos (tipo_movimiento, cantidad, fecha, fk_residuo, fk_elemento, fk_usuario) VALUES ('entrada', ?, CURRENT_TIMESTAMP(), ?, ?)`;
-        const [rows2] = await pool.query(sql2, [cantidad, id_residuo, fk_elemento, fk_usuario]);
+        const sql2 = `INSERT INTO movimientos (tipo_movimiento, cantidad, fecha, fk_residuo, fk_elemento, fk_actividad) VALUES ('entrada', ?, CURRENT_TIMESTAMP(), ?, ?, ?)`;
+        const [rows2] = await pool.query(sql2, [cantidad, id_residuo, fk_elemento, fk_actividad]);
 
         res.status(201).json({ success: true, message: "Residuo registrado con éxito." });
 
@@ -145,7 +145,7 @@ export const residuoListarMovimientos = async (req, res) => {
         const { rol } = req.user;
 
         if (rol === 'administrador') {
-            let query = 'SELECT m.id_movimiento, m.tipo_movimiento, m.cantidad, m.fecha, r.nombre_residuo, u.nombre FROM movimientos m JOIN residuos r ON m.fk_residuo = r.id_residuo JOIN usuarios u ON m.fk_usuario = u.id_usuario'
+            let query = 'SELECT m.id_movimiento, m.tipo_movimiento, m.cantidad, m.fecha, r.nombre_residuo, u.nombre FROM movimientos m JOIN residuos r ON m.fk_residuo = r.id_residuo JOIN actividades u ON m.fk_actividad = u.id_actividad'
             const [result] = await pool.query(query);
 
             if (result.length > 0) {
