@@ -2,27 +2,38 @@ import { pool } from "../database/conexion.js";
 
 export const residuoRegistrar = async (req, res) => {
     try {
-
-                
         const { rol } = req.user;
 
         if (rol === 'administrador') {
+            const { nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm, fk_elemento, fk_actividad } = req.body;
 
-        const { nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm, fk_usuario, fk_elemento, fk_actividad } = req.body;
+            // Verificar si el residuo ya existe
+            const checkResiduoSql = 'SELECT id_residuo, cantidad FROM residuos WHERE nombre_residuo = ?';
+            const [rows] = await pool.query(checkResiduoSql, [nombre_residuo]);
 
-        const sql1 = `INSERT INTO residuos (nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm) VALUES (?, ?, ?, ?, ?)`;
-        const [rows1] = await pool.query(sql1, [nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm]);
+            if (rows.length > 0) {
+                // El residuo ya existe, actualiza la cantidad
+                const id_residuo_existente = rows[0].id_residuo;
+                const cantidad_existente = parseFloat(rows[0].cantidad) + parseFloat(cantidad);
 
-        const id_residuo = rows1.insertId;
+                const updateResiduoSql = 'UPDATE residuos SET cantidad = ? WHERE id_residuo = ?';
+                await pool.query(updateResiduoSql, [cantidad_existente, id_residuo_existente]);
+            } else {
+                // El residuo no existe, agrégalo a la tabla residuos
+                const insertResiduoSql = 'INSERT INTO residuos (nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm) VALUES (?, ?, ?, ?, ?)';
+                const [rows1] = await pool.query(insertResiduoSql, [nombre_residuo, tipo_residuo, cantidad, unidad_medida, fk_alm]);
 
-        const sql2 = `INSERT INTO movimientos (tipo_movimiento, cantidad, fecha, fk_residuo, fk_elemento, fk_actividad) VALUES ('entrada', ?, CURRENT_TIMESTAMP(), ?, ?, ?)`;
-        const [rows2] = await pool.query(sql2, [cantidad, id_residuo, fk_elemento, fk_actividad]);
+                const id_residuo = rows1.insertId;
 
-        res.status(201).json({ success: true, message: "Residuo registrado con éxito." });
+                // Agrega el movimiento a la tabla movimientos
+                const insertMovimientoSql = 'INSERT INTO movimientos (tipo_movimiento, cantidad, fecha, fk_residuo, fk_elemento, fk_actividad) VALUES (?, ?, CURRENT_TIMESTAMP(), ?, ?, ?)';
+                await pool.query(insertMovimientoSql, ['entrada', cantidad, id_residuo, fk_elemento, fk_actividad]);
+            }
 
-    } else {
-        return res.status(403).json({ 'message': 'Error: usuario no autorizado' });
-    }
+            res.status(201).json({ success: true, message: "Residuo registrado con éxito." });
+        } else {
+            return res.status(403).json({ 'message': 'Error: usuario no autorizado' });
+        }
     } catch (error) {
         console.error("Error al registrar residuo:", error);
         res.status(500).json({ success: false, message: "Error interno del servidor." });
@@ -30,15 +41,26 @@ export const residuoRegistrar = async (req, res) => {
 };
 
 
+
+
 export const residuoListar = async (req, res) => {
     try {
 
-                
-        const { rol } = req.user;
+//         SELECT 
+//         r.nombre_residuo,
+//         t.tipo_residuo,
+//         SUM(r.cantidad) as cantidad_total,
+//         r.unidad_medida,
+//         a.nombre_alm AS nombre_almacenamiento
+//     FROM 
+//         residuos r 
+//         JOIN almacenamiento a ON r.fk_alm = a.id_almacenamiento 
+//         JOIN tipos t ON r.tipo_residuo = t.id_tipo
+//     GROUP BY 
+//         r.nombre_residuo;
+// `;
 
-        if (rol === 'administrador') {
-
-        const query = 'SELECT r.id_residuo, r.nombre_residuo, r.tipo_residuo, r.cantidad, r.unidad_medida, r.fk_alm, a.nombre_alm AS nombre_almacenamiento FROM residuos r JOIN almacenamiento a ON r.fk_alm = a.id_almacenamiento ';
+        const query = 'SELECT r.id_residuo, r.nombre_residuo, t.tipo_residuo, r.cantidad, r.unidad_medida, r.fk_alm, a.nombre_alm AS nombre_almacenamiento FROM residuos r JOIN almacenamiento a ON r.fk_alm = a.id_almacenamiento JOIN tipos t ON r.tipo_residuo = t.id_tipo';
         const [result] = await pool.query(query);
 
         if (result.length > 0) {
@@ -47,10 +69,7 @@ export const residuoListar = async (req, res) => {
             return res.status(404).json({ 'message': 'No se encontraron registros de residuos' });
         }
 
-    } else {
-        return res.status(403).json({ 'message': 'Error: usuario no autorizado' });
-    }
-
+    
     } catch (e) {
         return res.status(500).json({ 'message': 'Error: ' + e });
     }
@@ -66,7 +85,7 @@ export const residuoListarId = async (req, res) => {
 
 
         const id = req.params.id;
-        const query = 'SELECT r.id_residuo, r.nombre_residuo, r.tipo_residuo, r.cantidad, r.unidad_medida, r.fk_alm, a.nombre_alm AS nombre_almacenamiento FROM residuos r JOIN almacenamiento a ON r.fk_alm = a.id_almacenamiento WHERE r.id_residuo = ?';
+        const query = 'SELECT r.id_residuo, r.nombre_residuo, t.tipo_residuo, r.cantidad, r.unidad_medida, r.fk_alm, a.nombre_alm AS nombre_almacenamiento FROM residuos r JOIN almacenamiento a ON r.fk_alm = a.id_almacenamiento JOIN tipos t ON r.tipo_residuo = t.id_tipo  WHERE r.id_residuo = ?';
         const [result] = await pool.query(query, [id]);
 
         if (result.length > 0) {
@@ -117,15 +136,16 @@ export const residuoRegistrarSalida = async (req, res) => {
         const { rol } = req.user;
 
         if (rol === 'administrador') {
-            const { fk_residuo, cantidad, fk_usuario, fk_elemento } = req.body;
+            let id = req.params.id
+            const { cantidad } = req.body;
 
 
-            const sql = `INSERT INTO movimientos (tipo_movimiento, cantidad, fecha, fk_residuo, fk_elemento, fk_usuario) VALUES ('salida', ?, CURRENT_TIMESTAMP(), ?, ?, ?)`;
-            const [rows] = await pool.query(sql, [cantidad, fk_residuo, fk_elemento, fk_usuario]);
+            const sql = `INSERT INTO movimientos (tipo_movimiento, cantidad, fecha, fk_residuo) VALUES ('salida', ?, CURRENT_TIMESTAMP(), ?)`;
+            const [rows] = await pool.query(sql, [cantidad, id]);
 
 
             const sql2 = `UPDATE residuos SET cantidad = cantidad - ? WHERE id_residuo = ?`;
-            await pool.query(sql2, [cantidad, fk_residuo]);
+            await pool.query(sql2, [cantidad, id]);
 
             res.status(201).json({ success: true, message: "Registro de salida de residuo exitoso." });
         } else {
@@ -145,7 +165,12 @@ export const residuoListarMovimientos = async (req, res) => {
         const { rol } = req.user;
 
         if (rol === 'administrador') {
-            let query = 'SELECT m.id_movimiento, m.tipo_movimiento, m.cantidad, m.fecha, r.nombre_residuo, u.nombre FROM movimientos m JOIN residuos r ON m.fk_residuo = r.id_residuo JOIN actividades u ON m.fk_actividad = u.id_actividad'
+            let query = `
+                SELECT m.id_movimiento, m.tipo_movimiento, m.cantidad, m.fecha, r.nombre_residuo, u.nombre_actividad
+                FROM movimientos m
+                JOIN residuos r ON m.fk_residuo = r.id_residuo
+                LEFT JOIN actividades u ON m.fk_actividad = u.id_actividad
+            `;
             const [result] = await pool.query(query);
 
             if (result.length > 0) {
@@ -159,4 +184,4 @@ export const residuoListarMovimientos = async (req, res) => {
     } catch (e) {
         return res.status(500).json({ 'message': 'Error: ' + e });
     }
-}
+};

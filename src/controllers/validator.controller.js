@@ -3,20 +3,21 @@ import jswt from 'jsonwebtoken';
 
 export const ValidarUsuario = async (req, res) => {
     try {
-        let { email, password } = req.body;
-        let sql = `select id_usuario, nombre, rol from usuarios where email = '${email}' and password = '${password}'`;
-        let [rows] = await pool.query(sql);
-
-        if (rows.length > 0) {
-            let token = jswt.sign({ user: rows[0] }, process.env.SECRET, { expiresIn: process.env.TIME });
-            return res.status(200).json({ "message": "Usuario autorizado", "token": token });
-        } else {
-            return res.status(404).json({ "message": "Usuario no autorizado" });
-        }
+      let { email, password } = req.body;
+      let sql = `select id_usuario, nombre, rol from usuarios where email = '${email}' and password = '${password}'`;
+      let [rows] = await pool.query(sql);
+  
+      if (rows.length > 0) {
+        let token = jswt.sign({ user: rows[0] }, process.env.SECRET, { expiresIn: process.env.TIME });
+        return res.status(200).json({ "message": "Usuario autorizado", "token": token, "rol": rows[0].rol });
+      } else {
+        return res.status(404).json({ "message": "Usuario no autorizado" });
+      }
     } catch (e) {
-        return res.status(500).json({ "message": e.message });
+      return res.status(500).json({ "message": e.message });
     }
-};
+  };
+  
 
 
 export const validarToken = async(req, res, next) => {
